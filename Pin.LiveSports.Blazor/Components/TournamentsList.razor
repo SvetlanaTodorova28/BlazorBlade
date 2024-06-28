@@ -1,0 +1,85 @@
+@inject IJSRuntime JSRuntime
+
+<h3 class="text-white p-2 text-center">All the tournaments</h3>
+
+<button class="btn btn-success" @onclick="() => OnAdd.InvokeAsync()">Add</button>
+
+<div class="container">
+    <div class="row mx-auto mb-5">
+        @foreach(var tournament in Tournaments )
+        {
+            <div class="card card-border" style="width: 18rem; margin: 1rem;  border-width: 2px">
+             
+                <div class="card-body text-center">
+                    <button class="btn btn-link" @onclick="() => OnShowTeams.InvokeAsync(tournament)">
+                        <h5 class="card-title">@tournament.Name</h5>
+                    </button>
+                    
+                    <button class="btn btn-warning  mb-1" @onclick="() => OnEdit.InvokeAsync(tournament)">Edit</button>
+                    <button class="btn btn-danger " @onclick="() => DeleteAndShowAllTournaments(tournament)">Delete</button>
+                    
+                </div>
+            </div>
+        
+        }
+    </div>
+</div>
+
+<div class="modal" id="deletetournamentconfirm" tabindex="-1" >
+    
+    <div class="modal-dialog" >
+
+        <div class="modal-content" style ="background-color:#1a1d20">
+            <div class="modal-header">
+
+                <h5 class="modal-title text-white">Do you want to delete the tournament: @selectedTournament?.Name </h5>
+
+            </div>
+
+            <div class="modal-footer"> <button type="button" class="btn btn-danger" @onclick="e => OnConfirmDelete()">Yes</button>
+
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button> </div> </div>
+
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public Tournament[] Tournaments { get; set; }
+    
+    [Parameter]
+    public EventCallback<Tournament> OnAdd { get; set; }
+
+    [Parameter]
+    public EventCallback<Tournament> OnEdit { get; set; }
+    
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback<Tournament> OnDelete { get; set; }
+    
+    [Parameter]
+    public EventCallback<Tournament> OnShowTeams { get; set; }
+
+    private Tournament selectedTournament = new();
+
+    private void ShowAllTournaments(){
+        selectedTournament = null;
+    }
+    private async Task DeleteAndShowAllTournaments(Tournament tournament){
+        selectedTournament = tournament;
+        await JSRuntime.InvokeVoidAsync("showConfirmDelete", "deletetournamentconfirm");
+    
+    }
+
+    private async Task OnConfirmDelete(){
+        await OnDelete.InvokeAsync(selectedTournament);
+        await JSRuntime.InvokeVoidAsync("hideConfirmDelete", "deletetournamentconfirm");
+        ShowAllTournaments();
+    }
+
+   
+}
+

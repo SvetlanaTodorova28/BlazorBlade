@@ -1,0 +1,112 @@
+@page "/Tournaments"
+                    @using Blazored.Toast.Services
+                    @inject ICrudService<Fencer> playersService
+                    @inject ICrudService<Team> teamService
+                    @inject ITournamentService tournamentService
+                    @inject IToastService toastService
+                    
+                    <PageTitle>Tournaments</PageTitle>
+                    
+                    
+                    @if (currentTournament == null && !showTeams)
+                    {
+                        <TournamentsList Tournaments="allTournaments" OnAdd="AddNewTournament" OnShowTeams="ShowTeamsOfTournament" OnEdit="EditTournament" OnDelete="DeleteTournament"></TournamentsList>
+                    }
+                    
+                    @if(showForm){
+                        <TournamentForm Tournament="currentTournament" Teams="allTeams" OnSave="SaveTournament" OnCancel="CancelForm"></TournamentForm>
+                    }
+                    @if(showTeams)
+                    {
+                        <TeamsList Teams="teamsOfChosenTournament" ShowAddButton=false ></TeamsList>
+                        <button class="btn btn-secondary small m-1" @onclick="ShowAllTournaments">Terug naar alle tournaments</button>
+                    }
+                    
+                    @code{
+                    
+                        private Tournament[] allTournaments;
+                        private Team[] allTeams;
+                        private Team[] teamsOfChosenTournament;
+                        
+                        private Tournament currentTournament = null;
+                        private bool showForm ;
+                        private bool showTeams ;
+                       
+                    
+                        protected async override Task OnInitializedAsync(){
+                            RefreshAllTournaments();
+                            AllTeams();
+                        }
+                        
+                        private async Task AllTeams(){
+                            allTeams = (await teamService.GetAllAsync()).ToArray();
+                        }
+                        private async Task RefreshAllTournaments(){
+                            allTournaments = (await tournamentService.GetAllAsync()).ToArray();
+                        }
+                        private async Task AddNewTournament(){
+                            showForm = true;
+                            currentTournament = new Tournament();
+                            currentTournament.StartDate = DateTime.Today;
+                        }
+                    
+                        private async Task ShowTeamsOfTournament(Tournament chosenTournament){
+                            var idsOfTeamsTournament = chosenTournament
+                                .Teams
+                                .Select(t => t.Id.ToString());
+                            teamsOfChosenTournament = teamService
+                                .GetAll()
+                                .Where(t => idsOfTeamsTournament.Contains(t.Id.ToString())) 
+                                .ToArray();
+                                    
+                            currentTournament = chosenTournament;
+                            showForm = false;
+                            showTeams = true;
+                        }
+                        private void ShowAllTournaments(){
+                            currentTournament = null;
+                            showForm = false;
+                            showTeams = false;
+                        }
+                        private async Task SaveTournament(Tournament tournament)
+                        {
+                            if(tournament.Id == Guid.Empty)
+                            {
+                                await tournamentService.CreateAsync(tournament);
+                                toastService.ShowSuccess("Tournament created");
+                                showForm = false;
+                            }
+                            else
+                            {
+                                await tournamentService.UpdateAsync(tournament);
+                                toastService.ShowInfo("Tournament updated");
+                                showForm = false;
+                            }
+                           
+                            currentTournament = null;
+                            await RefreshAllTournaments();
+                        }
+                        private void EditTournament(Tournament tournamentToEdit)
+                        {
+                            currentTournament = tournamentToEdit;
+                            showForm = true;
+                        }
+                        private async Task DeleteTournament(Tournament tournament){
+                            await tournamentService.DeleteAsync(tournament.Id);
+                            currentTournament = null;
+                            toastService.ShowWarning("Tournament  deleted");
+                            await RefreshAllTournaments();
+                            
+                        }
+                    
+                        
+                        private void CancelForm(){
+                            ShowAllTournaments();
+                            AllTeams();
+                        }
+                        
+                    
+                    }
+                    
+                    
+                       

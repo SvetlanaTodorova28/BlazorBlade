@@ -1,0 +1,46 @@
+@using Pin.LiveSports.Core.Enums
+
+<EditForm Model="@Team" OnValidSubmit="() => OnSave.InvokeAsync(Team)">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+    <ValidationSummary></ValidationSummary>
+
+    <div class="form-group m-3">
+        <label for="name">Name: </label>
+        <InputText id="name" class="input-field" @bind-Value="Team.Name" />
+        <ValidationMessage For="@(() => Team.Name)" />
+    </div>
+    <div class="form-group m-3">
+            <label for="countryCode">CountryCode: </label>
+            <InputSelect id="countryCode" TValue="string" @bind-Value="Team.CountryCode">
+                @foreach (var countryCode in CountriesCodes)
+                {
+                    <option value="@countryCode.ToString()">@countryCode</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="@(() => Team.CountryCode)" />
+        </div>
+    
+    <button type="submit" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-warning" @onclick="e => OnCancel.InvokeAsync()">Cancel</button>
+
+</EditForm>
+
+@code {
+    
+    [Parameter]
+    public Team Team { get; set; }
+    [Parameter]
+    public Fencer[] Players { get; set; }
+    [Parameter]
+    public IEnumerable<CountryCode> CountriesCodes { get; set; }
+    
+
+    [Parameter]
+    public EventCallback<Team> OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+    
+   
+
+}

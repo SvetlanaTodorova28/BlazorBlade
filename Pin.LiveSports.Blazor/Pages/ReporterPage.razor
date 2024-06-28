@@ -1,0 +1,203 @@
+@page "/ReporterPage"
+@using Microsoft.AspNetCore.SignalR.Client
+@using Pin.LiveSports.Blazor.Dto_s
+@using Pin.LiveSports.Blazor.Services
+@inject NavigationManager NavigationManager
+
+<PageTitle>Reporter</PageTitle>
+<p class="text-white">@formatted</p>
+
+<button @onclick="StartStopWatch">Start Watch</button>
+<button @onclick="StopStopWatch">Stop Watch</button>
+<button @onclick="ResetStopWatch">Reset Watch</button>
+
+<button @onclick="ResetDuels">Reset Duels</button>
+<button @onclick="LoadDuels">Load Duels</button>
+<button @onclick="EndTournament">End Tournament</button>
+
+<hr>
+
+@if (duelsForTheDayDto != null && duelsForTheDayDto.Length > 0)
+{
+    foreach (var duel in duelsForTheDayDto)
+    {
+        <DuelReporterComponent Duel="duel" OnUpdateScoreA="ChangeScoreA" OnUpdateScoreB = "ChangeScoreB" OnAddComment="AddComment" />
+    }
+}
+else
+{
+    <p>Load the duels of the day</p>
+}
+@code {
+
+    [Inject]
+    public IDuelEventManager DuelEventManager { get; set; }
+
+    private HubConnection? hubConnection;
+
+    private string? messageInput;
+    private int scoreAInput;
+    private int scoreBInput;
+    private int pointsA;
+    private int pointsB;
+    private TimeSpan totalTime = TimeSpan.FromMinutes(3);
+    private string formatted;
+    private TimeSpan elapsedTime = TimeSpan.Zero;
+    private bool isRunning;
+    private DateTime lastUpdateTime;
+    private Timer timer;
+
+    public DuelDto[] duelsForTheDayDto;
+    public Dictionary<string, int> fencersForGraph = new Dictionary<string, int>();
+
+
+    protected override async Task OnInitializedAsync(){
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl("https://localhost:7005/tournamentHub")
+            .Build();
+        
+        hubConnection.On<DuelDto[],Dictionary<string,int>>("ReceiveDuels", (duels,fencersWithRating) =>{
+            duelsForTheDayDto = duels;
+            fencersForGraph = fencersWithRating;
+            InvokeAsync(StateHasChanged);
+        });
+        hubConnection.On<Guid,List<string>>("ReceiveDuelComments", (duelId, comments) =>{
+            var duel = duelsForTheDayDto.FirstOrDefault(d => d.Id == duelId);
+            if (duel != null)
+            {
+                duel.Comments.AddRange(comments);
+            }
+            InvokeAsync(StateHasChanged);
+        });
+        hubConnection.On<Guid,int,Dictionary<string,int>>("ReceivePointsA", (duelId, pointsA,fencersWithRating) =>{
+            var duel =  duelsForTheDayDto.FirstOrDefault(d => d.Id == duelId);
+            if (duel != null){
+                duel.FencerAPoints = pointsA;
+            }
+            fencersForGraph = fencersWithRating;
+            InvokeAsync(StateHasChanged);
+        });
+        hubConnection.On<Guid,int,Dictionary<string, int>>("ReceivePointsB", async(duelId, pointsB,fencersWithRating) =>{
+            var duel = duelsForTheDayDto.FirstOrDefault(d => d.Id == duelId);
+            if (duel != null){
+                duel.FencerBPoints = pointsB;
+            }
+            fencersForGraph = fencersWithRating;
+            InvokeAsync(StateHasChanged);
+        });
+        hubConnection.On<DuelDto[]>("ReceiveResetDuels", (duels) => {
+            duelsForTheDayDto = duels;
+            InvokeAsync(StateHasChanged);
+        });
+       
+        await hubConnection.StartAsync();
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    
+    public async Task EndTournament(){
+            await hubConnection.SendAsync("NotifyClientsToEndSession",duelsForTheDayDto);
+            await hubConnection.StopAsync();
+            await hubConnection.DisposeAsync();
+            hubConnection = null;
+        
+        NavigationManager.NavigateTo("/");
+    }
+    public async Task ResetDuels(){
+        if (hubConnection is not null){
+            await hubConnection.SendAsync("ResetDuels", duelsForTheDayDto);
+        }
+    }
+
+    private async Task LoadDuels(){
+        if (hubConnection is not null){
+            await hubConnection.SendAsync("SendDuels");
+        }
+    }
+
+    private async Task AddComment((Guid duelId, String comment) info){
+        if (hubConnection is not null){
+            await hubConnection.SendAsync("SendDuelComments", info.duelId, info.comment);
+
+        }
+    }
+
+    private async Task ChangeScoreA((Guid duelId, int pointsA) info){
+        if (hubConnection is not null){
+            await LightAOn(info.duelId);
+            await hubConnection.SendAsync("UpdatePointsA", info.duelId, info.pointsA);
+        }
+    }
+    private async Task ChangeScoreB((Guid duelId, int pointsB) info){
+        if (hubConnection is not null){
+            await LightBOn(info.duelId);
+            await hubConnection.SendAsync("UpdatePointsB", info.duelId, info.pointsB);
+        }
+    }
+    private async Task LightAOn(Guid duelId){
+        if (DuelEventManager.MakeDuel(duelId) != null){
+            if (hubConnection is not null){
+                await hubConnection.SendAsync("TriggerLightA", duelId);
+            }
+        }
+    }
+    private async Task LightBOn(Guid duelId){
+        if (DuelEventManager.MakeDuel(duelId) != null){
+            if (hubConnection is not null){
+                await hubConnection.SendAsync("TriggerLightB", duelId);
+            }
+        }
+    }
+    private void StartStopWatch(){
+        if (!isRunning){
+            lastUpdateTime = DateTime.Now;
+            timer = new Timer(UpdateTime, null, 0, 1000);
+            isRunning = true;
+        }
+       
+    }
+    private async Task ResetStopWatch(){
+        StopStopWatch(); 
+        elapsedTime = TimeSpan.Zero; 
+        formatted = totalTime.ToString(@"mm\:ss"); 
+        lastUpdateTime = DateTime.Now; 
+        InvokeAsync(StateHasChanged);
+        if (hubConnection is not null && hubConnection.State == HubConnectionState.Connected){
+            await hubConnection.SendAsync("ResetWatch");
+        }
+       
+    }
+    private void StopStopWatch(){
+        if (isRunning){
+            timer?.Dispose();
+            isRunning = false;
+        }
+    }
+    private void UpdateTime(object state){
+        var now = DateTime.Now; 
+        elapsedTime += now - lastUpdateTime;
+        lastUpdateTime = now;
+
+        if (totalTime - elapsedTime <= TimeSpan.Zero){
+            elapsedTime = totalTime; 
+            StopStopWatch();
+        }
+
+   
+        TimeSpan remainingTime = totalTime - elapsedTime;
+    
+        formatted = remainingTime.ToString(@"mm\:ss");
+
+        InvokeAsync(() => {
+            if (hubConnection is not null){
+                hubConnection.SendAsync("UpdateWatch", formatted);
+            }
+            StateHasChanged(); 
+        });
+    }
+
+
+}

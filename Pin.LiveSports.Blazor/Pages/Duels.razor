@@ -1,0 +1,106 @@
+@page "/Duels"
+
+ @using Blazored.Toast.Services
+                    @inject ICrudService<Fencer> playersService
+                    @inject ICrudService<Team> teamService
+                    @inject ITournamentService tournamentService
+                    @inject ICrudService<Duel> duelService
+                    @inject IToastService toastService
+ <PageTitle>Duels</PageTitle>
+                    
+
+                    @if (currentDuel == null)
+                    {
+                        <DuelsList Duels="allDuels" OnAdd="AddNewDuel" OnEdit="EditDuel" OnDelete="DeleteDuel"></DuelsList>
+                    }
+                    
+                   else{
+                        <DuelForm Duel="currentDuel" Tournaments="allTournaments" Fencers="filteredFencers" OnSave="SaveDuel" OnCancel="CancelForm" OnTournamentChanged="HandleTournamentChanged"></DuelForm>
+                    }
+                   
+                    
+                    @code{
+                    
+                        private Duel[] allDuels;
+                        private Tournament[] allTournaments;
+                        private Fencer[] filteredFencers;
+                        
+                        private Duel currentDuel = null;
+                        private bool showForm ;
+                        private bool showTeams ;
+                       
+                    
+                        protected async override Task OnInitializedAsync(){
+                             RefreshAllDuels();
+                             AllTournaments();
+                             AllFencers();
+                        }
+                        
+                        private async Task AllTournaments(){
+                            allTournaments = (await tournamentService.GetAllAsync()).ToArray();
+                        }
+                        private async Task AllFencers(){
+                            filteredFencers = (await playersService.GetAllAsync()).ToArray();
+                        }
+                        private async Task RefreshAllDuels(){
+                            allDuels = (await duelService.GetAllAsync()).ToArray();
+                        }
+                        private async Task AddNewDuel(){
+                            showForm = true;
+                            currentDuel = new Duel();
+                        }
+                    
+                        
+                        private void ShowAllDuels(){
+                            currentDuel = null;
+                            showForm = false;
+                            showTeams = false;
+                        }
+                        private async Task SaveDuel(Duel duel)
+                        {
+                            if(duel.Id == Guid.Empty)
+                            {
+                                await duelService.CreateAsync(duel);
+                                toastService.ShowSuccess("Duel created");
+                                showForm = false;
+                            }
+                            else
+                            {
+                                await duelService.UpdateAsync(duel);
+                                toastService.ShowInfo("Duel updated");
+                                showForm = false;
+                            }
+                           
+                            currentDuel = null;
+                            await RefreshAllDuels();
+                        }
+                        private void EditDuel(Duel duelToEdit)
+                        {
+                            currentDuel = duelToEdit;
+                            showForm = true;
+                            var tournamentId = duelToEdit.TournamentId;
+                            HandleTournamentChanged(tournamentId);
+                        }
+                        private async Task DeleteDuel(Duel duel){
+                            await duelService.DeleteAsync(duel.Id);
+                            currentDuel = null;
+                            toastService.ShowWarning("Duel  deleted");
+                            await RefreshAllDuels();
+                            
+                        }
+                        private void CancelForm(){
+                            ShowAllDuels();
+                        }
+                        
+                        private async void HandleTournamentChanged(Guid tournamentId){
+                            var tournament = await tournamentService.GetAsync(tournamentId);
+                            if (tournament != null && tournament.Teams != null && tournament.Teams.Any()) {
+                                filteredFencers = tournament.Teams.SelectMany(t => t.Players ?? new List<Fencer>()).ToArray();
+                                StateHasChanged();
+                            }
+                        }
+
+                        
+                    
+                    }
+                    

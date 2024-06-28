@@ -1,0 +1,71 @@
+@inject ICrudService<Team> teamService
+<EditForm Model="@Tournament" OnValidSubmit="() => HandleSubmit()">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+    <ValidationSummary></ValidationSummary>
+
+    <div class="form-group m-3">
+        <label for="name">Name: </label>
+        <InputText id="name" class="input-field" @bind-Value="Tournament.Name" />
+        <ValidationMessage For="@(() => Tournament.Name)" />
+    </div>
+    <div class="form-group m-3">
+        <label for="startDate">Choose date: </label>
+        <InputDate id="startDate" class="input-field" @bind-Value="Tournament.StartDate" />
+        <ValidationMessage For="@(() => Tournament.StartDate)" />
+    </div>
+     
+     <div class="form-group m-3">
+            <label for="team">Team: </label>
+         <select @onchange="HandleTeamsSelection" multiple>
+             @foreach (var team in Teams){
+                 <option value="@team.Id">@team.Name</option>
+             }
+         </select>
+        </div>
+      
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-warning" @onclick="() => OnCancel.InvokeAsync()">Cancel</button>
+
+</EditForm>
+
+@code {
+    
+    [Parameter]
+    public Tournament Tournament { get; set; }
+    [Parameter]
+    public Team[] Teams { get; set; }
+
+    private string[] SelectedTeams { get; set; } = new string[]{ };
+    
+
+    [Parameter]
+    public EventCallback<Tournament> OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+    
+    
+    
+    private void HandleTeamsSelection(ChangeEventArgs e){
+        SelectedTeams = (string[])e.Value;
+    }
+
+    
+    private void HandleSubmit(){
+        if(Tournament.Teams == null)
+        {
+            Tournament.Teams = new List<Team>();
+        }
+        Tournament.Teams.Clear();
+        var teams = teamService
+            .GetAll()
+            .Where(t => SelectedTeams.Contains(t.Id.ToString())).ToList();
+        Tournament.Teams.AddRange(teams);
+        OnSave.InvokeAsync(Tournament);
+    }
+
+    
+   
+
+}

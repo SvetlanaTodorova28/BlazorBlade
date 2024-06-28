@@ -1,0 +1,41 @@
+@if (!Info){
+    @Fencer.Name
+    <p class="card-text">Rating @Fencer.Rating</p>
+    <p class="card-text">Team: @Fencer.Team.Name</p>
+    <button class="btn btn-primary" @onclick="OnInfo.InvokeAsync">Toon Info</button>
+}
+else{
+          
+    <div class="col-md-4">
+        <img src=@Fencer.AvatarPicture class="card-img h-100" alt="@Fencer.Name">
+    </div>
+    <div>
+        <h5 class="card-title ">@Fencer.Name</h5>
+        <h6 class="card-subtitle mb-2">Team: @Fencer.Team.Name</h6>
+        <h6 class="card-subtitle mb-2">Rating: @Fencer.Rating</h6>
+    </div>
+          
+          
+}
+
+@code {
+    [Parameter]
+    public Fencer Fencer { get; set; }
+   
+    [Parameter]
+    public EventCallback<Fencer> OnInfo { get; set; }
+
+    [Parameter]
+    public bool Info { get; set; }
+    
+    private bool showInfo = false;
+
+    private async Task ShowInfo() {
+        showInfo = Info;
+        await OnInfo.InvokeAsync(Fencer); 
+    }
+
+
+
+
+}

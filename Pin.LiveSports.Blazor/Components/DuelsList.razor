@@ -1,0 +1,77 @@
+@inject IJSRuntime JSRuntime
+<h3 class="text-white p-2 text-center">All the duels</h3>
+
+<button class="btn btn-success m-1" @onclick="e => OnAdd.InvokeAsync()">Add</button>
+
+<div class="container">
+
+    @foreach(var duel in Duels )
+    {
+        <div class="col-lg-9 mx-auto">
+         <div class="card card-bord" style="margin: 1rem; border-width: 2px">
+             
+                <div class="card-body text-center">
+                  
+                        <h5 class="card-title">@duel.Tournament.Name</h5>
+                        <h5 class="card-title">@duel.Tournament.StartDate.ToLongDateString()</h5>
+                        <h5 class="card-title">@duel.FencerA.Name</h5>
+                        <h5 class="card-title">@duel.FencerB.Name</h5>
+                    
+                    
+                        <button class="btn btn-warning  mb-1" @onclick="() => OnEdit.InvokeAsync(duel)">Edit</button>
+                        <button class="btn btn-danger " @onclick="() => DeleteAndShowAllDuels(duel)">Delete</button>
+                    
+                </div>
+            </div>
+        </div>
+    }
+
+</div>
+<div class="modal" id="deleteduelconfirm" tabindex="-1"> <div class="modal-dialog">
+
+        <div class="modal-content" style ="background-color:#1a1d20"> <div class="modal-header">
+
+                <h4 class="modal-title">    Do you want to delete the duel of : @selectedDuel?.FencerA?.Name  and @selectedDuel?.FencerB?.Name</h4> 
+
+            </div>
+
+            <div class="modal-footer"> <button type="button" class="btn btn-danger" @onclick="e => OnConfirmDelete()">Yes</button>
+
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button> </div> </div>
+
+    </div> </div>
+
+@code {
+    [Parameter]
+    public Duel[] Duels { get; set; }
+    
+    [Parameter]
+    public EventCallback<Duel> OnAdd { get; set; }
+
+    [Parameter]
+    public EventCallback<Duel> OnEdit { get; set; }
+    
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback<Duel> OnDelete { get; set; }
+    
+    [Parameter]
+    public EventCallback<Duel> OnShowTeams { get; set; }
+
+    private Duel selectedDuel = new();
+
+    private async Task DeleteAndShowAllDuels(Duel duel){
+        selectedDuel = duel;
+        await JSRuntime.InvokeVoidAsync("showConfirmDelete", "deleteduelconfirm");
+    
+    }
+
+    private async Task OnConfirmDelete(){
+        await OnDelete.InvokeAsync(selectedDuel);
+        await JSRuntime.InvokeVoidAsync("hideConfirmDelete", "deleteduelconfirm");
+        selectedDuel = null;
+    }
+}
+

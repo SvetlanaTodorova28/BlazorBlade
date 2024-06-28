@@ -1,0 +1,89 @@
+@inject IJSRuntime JSRuntime
+
+
+@if (selectedFencer == null)
+{
+    <h3 class="text-white p-2 text-center">All the players</h3>
+    if (ShowAddButton){
+        <button class="btn btn-success" @onclick="() => OnAdd.InvokeAsync()">Add</button>
+    }
+    <div class="container">
+        <div class="row mx-auto mb-5">
+            @foreach (var player in Players){
+                <div class="card card-bord" style="width: 28rem; margin: 1rem; border-width: 2px">
+                    <div class="card-body">
+                        <PlayerComponent Fencer="@player" OnInfo="() => SelectFencer(player)"></PlayerComponent>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <div class="card" style="width: 28rem; margin: 1rem;">
+        <div class="card-body">
+            <PlayerComponent Fencer="@selectedFencer" Info="true"></PlayerComponent>
+            @if (ShowAddButton){
+                <button class="btn btn-warning " @onclick="e => OnEdit.InvokeAsync(selectedFencer)">Edit</button>
+                <button class="btn btn-danger " @onclick="e => DeleteAndShowAllPlayers(selectedFencer)">Delete</button>
+            }
+                                                                                              </div>
+    </div>
+    <button class="btn btn-primary " @onclick="ShowAllPlayers">Back to the players</button>
+    
+    <div class="modal" id="deletefencerconfirm" tabindex="-1"> <div class="modal-dialog">
+
+        <div class="modal-content" style ="background-color:#1a1d20"> <div class="modal-header">
+
+                <h4 class="modal-title ">Do you want to delete the fencer: @selectedFencer.Name? </h4> 
+
+            </div>
+            <div class="modal-footer"> <button type="button" class="btn btn-danger" @onclick="() => OnConfirmDelete()">Yes</button>
+
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button> </div> </div>
+
+    </div> </div>
+       
+}
+@code{
+
+    [Parameter]
+    public Fencer[] Players { get; set; }
+
+
+    [Parameter]
+    public EventCallback<Fencer> OnAdd { get; set; }
+
+    [Parameter]
+    public bool ShowAddButton { get; set; } = true;
+
+    [Parameter]
+    public EventCallback<Fencer> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<Fencer> OnDelete { get; set; }
+
+   
+    private Fencer selectedFencer;
+
+    private void SelectFencer(Fencer fencer){
+        selectedFencer = fencer;
+    }
+
+    private void ShowAllPlayers(){
+        selectedFencer = null;
+    }
+
+    private async Task DeleteAndShowAllPlayers(Fencer fencer){
+        this.selectedFencer = fencer;
+        await JSRuntime.InvokeVoidAsync("showConfirmDelete", "deletefencerconfirm");
+    }
+
+    private async Task OnConfirmDelete(){
+        await OnDelete.InvokeAsync(this.selectedFencer);
+        await JSRuntime.InvokeVoidAsync("hideConfirmDelete", "deletefencerconfirm");
+        ShowAllPlayers();
+    }
+
+}

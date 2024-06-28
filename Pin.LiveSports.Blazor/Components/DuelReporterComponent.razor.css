@@ -1,0 +1,21 @@
+.input-group {
+    margin-bottom: 10px;
+}
+
+.input-group input,
+.input-group button {
+    margin-right: 10px;
+}
+.comment {
+    font-size: 0.95rem;
+    color: whitesmoke;
+    font-weight: lighter;
+    display: block;
+    margin: 2px 0; /* Pas deze regel aan */
+}
+
+.my-custom-scrollbar {
+    position: relative;
+    height: 200px;
+    overflow: auto;
+}

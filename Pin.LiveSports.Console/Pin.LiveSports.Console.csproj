@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Pin.Liveports.Console</RootNamespace>
+        <LangVersion>preview</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Pin.LiveSports.Blazor\Pin.LiveSports.Blazor.csproj" />
+      <ProjectReference Include="..\Pin.LiveSports.Core\Pin.LiveSports.Core.csproj" />
+      <ProjectReference Include="..\Pin.LiveSports.Utilities\Pin.LiveSports.Utilities.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0-preview.3.24172.9" />
+    </ItemGroup>
+
+</Project>

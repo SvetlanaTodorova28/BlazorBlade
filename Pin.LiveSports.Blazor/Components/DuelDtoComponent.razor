@@ -1,0 +1,42 @@
+
+@using Pin.LiveSports.Blazor.Dto_s
+
+<div class="duel-container">
+    <div class="duel-info">
+        <img src="@Duel.FencerAFlag" alt="Country Flag" class="country-flag"/>
+        <span class="fencer-name">@Duel.FencerAName</span>
+        <span class="duel-score">@Duel.FencerAPoints</span> 
+        
+        <span class="duel-score">@Duel.FencerBPoints</span> 
+        <span class="fencer-name">@Duel.FencerBName</span>
+        <img src="@Duel.FencerBFlag" alt="Country Flag" class="country-flag"/>
+    </div>
+    <div class="duel-indicators">
+        <div class=" indicator @CssClassForA() "></div>
+        <div class=" indicator @CssClassForB() "></div>
+    </div>
+    <div class="comments-container my-custom-scrollbar">
+        @foreach (var comment in Duel.Comments){
+            <p class="comment">@comment</p>
+
+        }
+    </div>
+
+</div>
+
+@code {
+    [Parameter]
+    public DuelDto Duel { get; set; }
+    
+    [Parameter]
+    public List<string> Comments { get; set;}
+    
+    [Parameter]
+    public TimeSpan TimeLeft { get; set; }
+
+    
+    private string CssClassForA() => Duel.LightA ? "red-light" : "default-light";
+    private string CssClassForB() => Duel.LightB ? "green-light" : "default-light";
+    
+    
+}

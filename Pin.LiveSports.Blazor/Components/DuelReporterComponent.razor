@@ -1,0 +1,48 @@
+@using Pin.LiveSports.Blazor.Dto_s
+
+<div class="duel-reporter">
+    <div class="duel-info">
+        <h3 class="text-white">@Duel.FencerAName  @Duel.FencerAPoints vs @Duel.FencerBName @Duel.FencerBPoints</h3>
+        <div class="scores">
+            <input  @bind="Duel.FencerAPoints" placeholder="Fencer A Score" class="score-input" />
+            <button @onclick="() => OnUpdateScoreA.InvokeAsync((Duel.Id,1))">Add point @Duel.FencerAName</button>
+            <button @onclick="() => OnUpdateScoreA.InvokeAsync((Duel.Id,Duel.FencerAPoints))">Update @Duel.FencerAName Score</button>
+            <input @bind="Duel.FencerBPoints" placeholder="Fencer B Score" class="score-input" />
+            <button @onclick="() => OnUpdateScoreB.InvokeAsync((Duel.Id, 1))">Add point @Duel.FencerBName Score</button>
+            <button @onclick="() => OnUpdateScoreB.InvokeAsync((Duel.Id,Duel.FencerBPoints))">Update @Duel.FencerBName Score</button>
+        </div>
+    </div>
+    <div class="duel-comment">
+        <input @bind="Comment" placeholder="Add a comment" class="comment-input"/>
+        <button @onclick="AddComment">Add Comment</button>
+    </div>
+</div>
+<div class="comments-container my-custom-scrollbar">
+    @foreach (var comment in Duel.Comments){
+    <p class="comment">@comment</p>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public DuelDto Duel { get; set; }
+
+    public string Comment { get; set; } = "";
+
+    [Parameter]
+    public EventCallback<(Guid, int)> OnUpdateScoreA { get; set; }
+    
+
+    [Parameter]
+    public EventCallback<(Guid, int)> OnUpdateScoreB { get; set; }
+
+    [Parameter]
+    public EventCallback<(Guid, string)> OnAddComment { get; set; }
+    
+    private async Task AddComment() {
+        if (!string.IsNullOrWhiteSpace(Comment)) {
+            await OnAddComment.InvokeAsync((Duel.Id, Comment));
+            Comment = ""; 
+        }
+    }
+}

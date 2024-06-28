@@ -1,0 +1,72 @@
+
+<EditForm Model="@Player" OnValidSubmit="e => OnSave.InvokeAsync(Player)">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+    <ValidationSummary></ValidationSummary>
+
+    <div class="form-group m-3">
+        <label for="name">Name: </label>
+        <InputText id="name" class=" input-field" @bind-Value="Player.Name" />
+        <ValidationMessage For="@(() => Player.Name)" />
+    </div>
+    
+    <div class="form-group m-3">
+        <label for="team">Team: </label>
+        <InputSelect id="team" TValue="Guid" @bind-Value="Player.TeamId">
+            @foreach (var team in Teams)
+            {
+                <option value="@team.Id">@team.Name</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => Player.TeamId)" />
+    </div>
+    <div class="form-group m-3">
+        <label>
+            <InputCheckbox @bind-Value="Player.IsMale" @onchange="HandleGenderChange" />
+            Male
+        </label>
+        <label>
+            <InputCheckbox @bind-Value="Player.IsFemale" @onchange="HandleGenderChange" />
+            Female
+        </label>
+    </div>
+
+    <div class="form-group m-3">
+        <label for="rating">Rating: </label>
+        <InputNumber id="rating" class="input-field" @bind-Value="Player.Rating" />
+        <ValidationMessage For="@(() => Player.Rating)" />
+    </div>
+    
+    <button type="submit" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-warning" @onclick="e => OnCancel.InvokeAsync()">Cancel</button>
+
+</EditForm>
+
+@code {
+    [Parameter]
+    public Fencer Player { get; set; }
+
+    [Parameter]
+    public Team[] Teams { get; set; }
+
+    [Parameter]
+    public EventCallback<Fencer> OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+    
+    private void HandleGenderChange(ChangeEventArgs e){
+        if (Player.IsMale && Player.IsFemale)
+        {
+            if ((bool)e.Value) 
+            {
+                if (Player.IsMale)
+                    Player.IsFemale = false;
+                else
+                    Player.IsMale = false;
+            }
+        }
+        InvokeAsync(StateHasChanged);
+    }
+    
+    
+}

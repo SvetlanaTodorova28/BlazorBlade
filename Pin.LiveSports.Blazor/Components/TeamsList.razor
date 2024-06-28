@@ -1,0 +1,87 @@
+@inject IJSRuntime JSRuntime
+<h3 class="text-white p-2 text-center">All the teams</h3>
+@if(ShowAddButton){
+    <button class="btn btn-success m-1" @onclick="() => OnAdd.InvokeAsync()">Add Team</button>
+}
+<div class="container">
+    <div class="row mx-auto mb-5">
+        @foreach(var team in Teams)
+        {
+            <div class="col-lg-9 mx-auto">
+            <div class="card card-bord" style=" margin: 1rem; border-width: 2px">
+             
+                <div class="card-body text-center">
+                    @if (ShowAddButton){
+                        <button class="btn btn-link" @onclick="() => OnShowFencers.InvokeAsync(team)">
+                            <h5 class="card-title">@team.Name</h5>
+                        </button>
+                        <div class="d-flex justify-content-center">
+                            <img class="d-block" src="@team.Flag" alt="Vlag">
+                        </div>
+
+                        <button class="btn btn-warning  mb-1" @onclick="() => OnEdit.InvokeAsync(team)">Edit</button>
+                        <button class="btn btn-danger " @onclick="() => DeleteAndShowAllTeams(team)">Delete</button>
+                    }
+                    else{
+                        <h5 class="card-title">@team.Name</h5>
+                        
+                    }
+
+                </div>
+            </div>
+        </div>
+        }
+    </div>
+</div>
+<div class="modal" id="deleteteamconfirm" tabindex="-1"> <div class="modal-dialog">
+
+        <div class="modal-content" style ="background-color:#1a1d20"> <div class="modal-header">
+
+                <h4 class="modal-title">    Do you want to delete the team: @selectedTeam?.Name</h4> 
+
+            </div>
+
+            <div class="modal-footer"> <button type="button" class="btn btn-danger" @onclick="() => OnConfirmDelete()">Yes</button>
+
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button> </div> </div>
+
+    </div> </div>
+
+@code {
+    [Parameter]
+    public Team[] Teams { get; set; }
+    
+    [Parameter]
+    public EventCallback<Team> OnAdd { get; set; }
+
+    [Parameter]
+    public EventCallback<Team> OnEdit { get; set; }
+    
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback<Team> OnDelete { get; set; }
+    
+    [Parameter]
+    public EventCallback<Team> OnShowFencers { get; set; }
+    
+    [Parameter]
+    public  bool ShowAddButton { get; set; }
+    
+    private Team selectedTeam = new (); 
+    
+    private async Task DeleteAndShowAllTeams(Team team){
+        selectedTeam = team;
+        await JSRuntime.InvokeVoidAsync("showConfirmDelete", "deleteteamconfirm");
+    
+    }
+
+    private async Task OnConfirmDelete(){
+        if (selectedTeam != null){
+            await OnDelete.InvokeAsync(selectedTeam); 
+            await JSRuntime.InvokeVoidAsync("hideConfirmDelete", "deleteteamconfirm");
+            selectedTeam = null;
+        }
+    }
+}

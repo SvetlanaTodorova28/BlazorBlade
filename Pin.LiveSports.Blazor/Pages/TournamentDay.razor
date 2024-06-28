@@ -1,0 +1,141 @@
+@page "/TournamentDay"
+@using Microsoft.AspNetCore.SignalR.Client
+@using Pin.LiveSports.Blazor.Dto_s
+@inject NavigationManager NavigationManager
+<div class="tournament-background">
+   
+    <div class="masking-effect">
+        <div>
+            <h3 class="text-white p-2">Tournament Day</h3>
+            @if (!isLogged && !removeLogin){
+                <button @onclick="HandleLogin">Login</button>
+            }
+
+            @if (duelsForTheDayDtos != null && duelsForTheDayDtos.Length > 0){
+                
+                <div>
+                    <RangkingWithPints FencersWithRating="fencersForGraph"></RangkingWithPints>
+                </div>
+                <div class="text-center timer-container">
+                    <p>@(string.IsNullOrEmpty(time) ? "03:00" : time)</p>
+                </div>
+                
+                <div style="height: 400px; overflow-y: auto;">
+                    <div class="duel-container">
+                        @foreach (var duel in duelsForTheDayDtos)
+                        {
+                            <DuelDtoComponent Duel="@duel" Comments="@duel.Comments"></DuelDtoComponent>
+                        }
+                    </div>
+                </div>
+
+            }
+            else{
+                <p>The tournament will start soon...</p>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private HubConnection? hubConnection;
+    private DuelDto[] duelsForTheDayDtos = Array.Empty<DuelDto>();
+    public Dictionary<string, int> fencersForGraph = new Dictionary<string, int>();
+    private bool isLogged ;
+    private bool removeLogin;
+    private string time;
+    
+   
+
+
+    protected override async Task OnInitializedAsync(){
+     
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl("https://localhost:7005/tournamentHub")
+            .Build();
+        hubConnection.On<DuelDto[],Dictionary<string, int>>("ReceiveDuels", ( duels, fencersWithRating) =>{
+            duelsForTheDayDtos = duels;
+            fencersForGraph = fencersWithRating;
+            removeLogin = true;
+            InvokeAsync(StateHasChanged);
+        });
+        hubConnection.On<Guid,List<string>>("ReceiveDuelComments", (duelId, comments) =>{
+            var duel = duelsForTheDayDtos.FirstOrDefault(d => d.Id == duelId);
+            if (duel != null)
+            {
+                duel.Comments.AddRange(comments);
+            }
+            InvokeAsync(StateHasChanged);
+        });
+        hubConnection.On<Guid,int,Dictionary<string,int>>("ReceivePointsA", (duelId, pointsA,fencersWithRating) =>{
+            var duel =  duelsForTheDayDtos.FirstOrDefault(d => d.Id == duelId);
+            if (duel != null){
+                duel.FencerAPoints = pointsA;
+            }
+            fencersForGraph = fencersWithRating;
+            InvokeAsync(StateHasChanged);
+        });
+        hubConnection.On<Guid,int,Dictionary<string, int>>("ReceivePointsB", async(duelId, pointsB,fencersWithRating) =>{
+            var duel = duelsForTheDayDtos.FirstOrDefault(d => d.Id == duelId);
+            if (duel != null){
+                duel.FencerBPoints = pointsB;
+            }
+            fencersForGraph = fencersWithRating;
+            InvokeAsync(StateHasChanged);
+        });
+        hubConnection.On<Guid>("ReceiveLightA", async (duelId) => await ToggleLightAAsync(duelId));
+        hubConnection.On<Guid>("ReceiveLightB", async (duelId) => await ToggleLightBAsync(duelId));
+        hubConnection.On<string>("ReceiveTime", async (remainingTime) => {
+            time = remainingTime;
+            InvokeAsync(StateHasChanged);
+        });
+        hubConnection.On<DuelDto[]>("ReceiveResetDuels", (duels) => {
+            duelsForTheDayDtos = duels;
+            InvokeAsync(StateHasChanged);
+        });
+        hubConnection.On<DuelDto[]>("ReceiveEndSession", duels  => {
+            duelsForTheDayDtos = duels;
+            hubConnection.StopAsync();
+            hubConnection.DisposeAsync();
+            NavigationManager.NavigateTo("/");
+        });
+
+        await hubConnection.StartAsync();
+    }
+ 
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    
+   
+    private async Task ToggleLightAAsync(Guid duelId){
+        var duel = duelsForTheDayDtos.FirstOrDefault(d => d.Id == duelId);
+        if (duel != null){
+            duel.LightA = true;
+            StateHasChanged(); 
+            await Task.Delay(1000); 
+            duel.LightA = false;
+            StateHasChanged(); 
+        }
+    }
+
+    private async Task ToggleLightBAsync(Guid duelId){
+        var duel = duelsForTheDayDtos.FirstOrDefault(d => d.Id == duelId);
+        if (duel != null){
+            duel.LightB = true;
+            StateHasChanged(); 
+            await Task.Delay(1000); 
+            duel.LightB = false;
+            StateHasChanged(); 
+        }
+    }
+    
+    private void HandleLogin(){
+        isLogged = true;
+        StateHasChanged();
+        NavigationManager.NavigateTo("/ReporterPage");
+        
+    }
+
+}

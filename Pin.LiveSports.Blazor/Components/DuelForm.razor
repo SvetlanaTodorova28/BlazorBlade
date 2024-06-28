@@ -1,0 +1,71 @@
+
+
+<EditForm Model="@Duel" OnValidSubmit="() => OnSave.InvokeAsync(Duel)">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+    <ValidationSummary></ValidationSummary>
+
+     <div class="form-group m-3">
+            <label for="tournament">Tournament: </label>
+            <InputSelect id="tournament"  TValue="Guid" Value="@Duel.TournamentId" ValueChanged="@OnTournamentIdChanged" ValueExpression="@(() => Duel.TournamentId)">
+                <option value="">Select a Tournament</option>
+                @foreach (var tournament in Tournaments)
+                {
+                    <option value="@tournament.Id" selected="@tournament.Id.Equals(Duel.TournamentId)">@tournament.Name</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="@(() => Duel.TournamentId)" />
+        </div>
+    <div class="form-group m-3">
+        <label for="fencer">Fencer A: </label>
+        <InputSelect id="fencer" TValue="Guid" @bind-Value="Duel.FencerAId">
+            <option value="">Select a fencer...</option>
+            @foreach (var fencer in Fencers){
+                <option value="@fencer.Id">@fencer.Name</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => Duel.FencerAId)" />
+    </div>
+     <div class="form-group m-3">
+                <label for="fencer">Fencer B: </label>
+                <InputSelect id="fencer" TValue="Guid" @bind-Value="Duel.FencerBId">
+                    <option value="">Select a fencer...</option>
+                    @foreach (var fencer in Fencers){
+                        <option value="@fencer.Id">@fencer.Name</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => Duel.FencerBId)" />
+            </div>
+    
+    <button type="submit" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-warning" @onclick="() => OnCancel.InvokeAsync()">Cancel</button>
+
+</EditForm>
+
+@code {
+    
+    [Parameter]
+    public Duel Duel { get; set; }
+    
+    [Parameter]
+    public Tournament[] Tournaments { get; set; }
+    
+    [Parameter]
+    public Fencer[] Fencers { get; set; }
+    
+    [Parameter]
+    public EventCallback<Duel> OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+    
+    [Parameter]
+    public EventCallback<Guid> OnTournamentChanged { get; set; }
+
+    private async Task OnTournamentIdChanged(Guid newTournamentId){
+        Duel.TournamentId = newTournamentId;
+        await OnTournamentChanged.InvokeAsync(newTournamentId);
+    }
+    
+    
+
+}

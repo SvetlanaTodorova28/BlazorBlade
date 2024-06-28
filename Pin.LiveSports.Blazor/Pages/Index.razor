@@ -1,0 +1,27 @@
+﻿@page "/"
+@using Blazored.Toast.Services
+@using NuGet.Packaging
+@inject IToastService ToastService
+@inject ITournamentService tournamentService
+@inject ICrudService<Fencer> playerService
+@inject ICrudService<Duel> duelService
+@inject NavigationManager NavigationManager
+<PageTitle>Index</PageTitle>
+    <div class="container">
+        <h2 class="text-center">Welcome to the Fencing Duels Arena!</h2>
+        <p>This is your prime destination for the latest news, insights, and discussions on all major fencing tournaments and duels across the globe. Whether you're a fencing aficionado, a seasoned fencer, or just intrigued by the art of swordplay, you'll find something of interest right here.</p>
+        <p>Stay informed about upcoming tournaments, delve into detailed analyses of past duels, and uncover strategies from the world’s top fencers. Join our community and share your passion for fencing with fellow enthusiasts.</p>
+        <p>Dive into the world of fencing with us, where honor meets precision. Explore the elegance of foil, the power of epee, and the speed of sabre. From local club matches to the grandeur of the Olympic Games, we cover it all.</p>
+        <p>Embrace the thrill of the duel!</p>
+    </div>
+@code {
+
+    private bool  isTournamentDay;
+    protected override async Task OnInitializedAsync(){
+        isTournamentDay = await tournamentService.IsTournamentDayAsync(DateTime.Now);
+        if (isTournamentDay){
+            NavigationManager.NavigateTo("/TournamentDay");
+        }
+    }
+    
+}

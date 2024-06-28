@@ -1,0 +1,43 @@
+<div class="container">
+    <div class="chart">
+        @foreach (var item in FencersWithRating)
+        {
+        <div class="part percent-@CalculateHeightPercentage(item.Value)">
+            <div class="label">@item.Key</div>
+            <div class="bar @GetColorClass(int.Parse(@CalculateHeightPercentage(item.Value)))">
+                <div class="label">@item.Value</div>
+            </div>
+        </div>
+        }
+    </div>
+</div>
+@code {
+    
+    [Parameter] public Dictionary<string, int> FencersWithRating{ get; set; }
+    private int maxRating => FencersWithRating.Values.Any() ? FencersWithRating.Values.Max() : 0;
+
+    private string CalculateHeightPercentage(int rating){
+        if (maxRating == 0) return "0%";
+
+        var percentage = (double)rating / maxRating * 100;
+        
+        var roundedPercentage = Math.Round(percentage, 0).ToString();
+        
+        if (roundedPercentage.Length > 2)
+        {
+            roundedPercentage = roundedPercentage.Substring(0, 3);
+        }
+        return roundedPercentage;
+    }
+    private string GetColorClass(int value){
+        switch (value){
+            case var _ when value >= 75:
+                return "green";
+            case var _ when value >= 50:
+                return "blue";
+            default:
+                return "red";
+        }
+    }
+
+}

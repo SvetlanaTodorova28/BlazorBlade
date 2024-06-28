@@ -1,0 +1,60 @@
+.duel-info, .duel-indicators {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.country-flag {
+    height: 50px; /* Pas hoogte aan naar wens */
+}
+
+.fencer-name {
+    margin: 0 10px; /* Geeft ruimte tussen naam en score of vlag */
+}
+
+.duel-score {
+    font-size: 20px; /* Pas aan naar wens */
+}
+
+.duel-timer {
+    margin: 0 20px; 
+}
+
+.comments-container {
+    display: flex;
+    flex-direction: column; 
+    justify-content: center;
+    align-items: baseline;
+    height: auto; 
+}
+
+
+.comment {
+    font-size: 0.95rem;
+    color: firebrick;
+    font-weight: lighter;
+    display: block;
+    margin: 2px 0; /* Pas deze regel aan */
+}
+
+.my-custom-scrollbar {
+    position: relative;
+    height: 200px;
+    overflow: auto;
+}
+
+.indicator {
+    width: 300px; 
+    height: 10px;
+    margin: 5px;
+    background-color: slategrey;
+}
+
+
+.red-light {
+    background-color: red;
+}
+
+.green-light {
+    background-color: green;
+}

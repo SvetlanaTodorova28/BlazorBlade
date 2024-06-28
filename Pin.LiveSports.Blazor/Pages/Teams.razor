@@ -1,0 +1,109 @@
+@page "/Teams"
+@using Blazored.Toast.Services
+@using Pin.LiveSports.Blazor.Utitlities
+@using Pin.LiveSports.Core.Enums
+
+@inject ICrudService<Fencer> playersService
+@inject ICrudService<Team> teamService
+@inject IToastService toastService
+
+<PageTitle>Index</PageTitle>
+
+
+@if (currentTeam == null && !showPlayers)
+{
+    <TeamsList Teams="allTeams" OnAdd="AddNewTeam" OnShowFencers="ShowPlayers" OnEdit="EditTeam" OnDelete="DeleteTeam" ShowAddButton="true"></TeamsList>
+}
+
+@if(showForm){
+    <TeamForm Team="currentTeam" Players="allPlayers" CountriesCodes = "CountriesCodes" OnSave="SaveTeam" OnCancel="CancelForm"></TeamForm>
+}
+@if(showPlayers)
+{
+    <PlayersList Players="allPlayers" ShowAddButton=false></PlayersList>
+    <button class="btn btn-secondary small m-3" @onclick="ShowAllTeams">Terug naar alle teams</button>
+}
+
+@code{
+
+    private Fencer[] allPlayers;
+    private Team[] allTeams;
+    
+    private Team currentTeam = null;
+    private bool showForm ;
+    private bool showPlayers ;
+   
+    public IEnumerable<CountryCode> CountriesCodes = Enum.GetValues(typeof(CountryCode)).Cast<CountryCode>();
+
+
+    protected async override Task OnInitializedAsync(){
+        RefreshAllTeams();
+        AllPlayers();
+    }
+    
+    private async Task AllPlayers(){
+        allPlayers = (await playersService.GetAllAsync()).ToArray();
+    }
+    
+    private async Task RefreshAllTeams(){
+        allTeams = (await teamService.GetAllAsync()).ToArray();
+    }
+    private async Task AddNewTeam(){
+        showForm = true;
+        currentTeam = new Team();
+    }
+    private async Task ShowPlayers(Team chosenTeam){
+      allPlayers =   playersService
+            .GetAll()
+            .Where(p => p.TeamId == chosenTeam.Id).ToArray();
+        currentTeam = chosenTeam;
+        showForm = false;
+        showPlayers = true;
+
+    }
+    private void ShowAllTeams(){
+        currentTeam = null;
+        showForm = false;
+        showPlayers = false;
+    }
+    private async Task SaveTeam(Team team)
+    {
+        if(team.Id == Guid.Empty)
+        {
+            team.Flag = FlagUrlHelper.GetFlagUrl(team.CountryCode);
+            await teamService.CreateAsync(team);
+            toastService.ShowSuccess("Team created");
+            showForm = false;
+        }
+        else
+        {
+            team.Flag = FlagUrlHelper.GetFlagUrl(team.CountryCode);
+            await teamService.UpdateAsync(team);
+            toastService.ShowInfo("Team updated");
+            showForm = false;
+        }
+       
+        currentTeam = null;
+        await RefreshAllTeams();
+    }
+    private void EditTeam(Team teamToEdit)
+    {
+        currentTeam = teamToEdit;
+        showForm = true;
+    }
+    private async Task DeleteTeam(Team team){
+        await teamService.DeleteAsync(team.Id);
+        currentTeam = null;
+        toastService.ShowWarning("Team  deleted");
+        await RefreshAllTeams();
+        
+    }
+    private void CancelForm(){
+        ShowAllTeams();
+    }
+    
+
+}
+
+
+   

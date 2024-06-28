@@ -1,0 +1,77 @@
+@page "/Players"
+@inject ICrudService<Fencer> playersService
+@inject ICrudService<Team> teamService
+@using Blazored.Toast.Services
+@inject IToastService toastService
+
+<PageTitle>Index</PageTitle>
+
+
+@if (currentPlayer == null){
+        <PlayersList Players="allPlayers"  OnAdd="AddNewPlayer" OnEdit="EditFencer" OnDelete="DeleteFencer"></PlayersList>
+}
+
+else{
+        <PlayerForm Player="currentPlayer" Teams="allTeams" OnSave="SavePlayer" OnCancel="Cancel"></PlayerForm>
+    }
+
+
+@code{
+
+    private Fencer[] allPlayers;
+    private Team[] allTeams;
+    private Fencer currentPlayer = null;
+
+    protected async override Task OnInitializedAsync(){
+        RefreshAllPlayers();
+        AllTeams();
+    }
+    
+    private async Task AllTeams(){
+        allTeams = (await teamService.GetAllAsync()).ToArray();
+    }
+    private async Task RefreshAllPlayers(){
+        currentPlayer = null;
+        allPlayers = (await playersService.GetAllAsync()).ToArray();
+        
+    }
+    private async Task AddNewPlayer(){
+        currentPlayer = new Fencer();
+       
+    }
+    
+    private async Task SavePlayer(Fencer fencer)
+    {
+        if(fencer.Id == Guid.Empty)
+        {
+            await playersService.CreateAsync(fencer);
+            toastService.ShowSuccess("Player created");
+        }
+        else
+        {
+            await playersService.UpdateAsync(fencer);
+            toastService.ShowInfo("Player updated");
+        }
+        currentPlayer = null;
+        await RefreshAllPlayers();
+    }
+    private void EditFencer(Fencer fencerToEdit)
+    {
+        currentPlayer = fencerToEdit;
+    }
+    private void Cancel()
+    {
+        currentPlayer = null;
+    }
+
+    private async Task DeleteFencer(Fencer fencer){
+        await playersService.DeleteAsync(fencer.Id);
+        currentPlayer = null;
+        toastService.ShowWarning("Player deleted");
+        await RefreshAllPlayers();
+        
+    }
+    
+
+}
+
